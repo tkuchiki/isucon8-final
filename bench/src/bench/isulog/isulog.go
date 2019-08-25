@@ -1,9 +1,12 @@
 package isulog
 
 import (
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -12,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/http2"
 )
 
 const (
@@ -208,7 +212,26 @@ func (b *Isulog) Initialize() error {
 	u := new(url.URL)
 	*u = *b.endpoint
 	u.Path = path.Join(u.Path, "/initialize")
-	res, err := http.Post(u.String(), "application/json", strings.NewReader("{}"))
+
+	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader("{}"))
+	if err != nil {
+		return fmt.Errorf("isubank new request failed. err: %s", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	if err := http2.ConfigureTransport(tr); err != nil {
+		log.Fatalf("Failed to configure h2 transport: %s", err)
+	}
+	c := &http.Client{
+		Transport: tr,
+	}
+
+	res, err := c.Do(req)
+	//res, err := http.Post(u.String(), "application/json", )
 	if err != nil {
 		return errors.Wrap(err, "isulog /initialize failed")
 	}
@@ -243,7 +266,25 @@ func (b *Isulog) getLogs(v url.Values) ([]*Log, error) {
 	u.Path = path.Join(u.Path, "/logs")
 	u.RawQuery = v.Encode()
 
-	res, err := http.Get(u.String())
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "isulog GET /logs failed")
+	}
+	//req.Header.Set("Content-Type", "application/json")
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	if err := http2.ConfigureTransport(tr); err != nil {
+		log.Fatalf("Failed to configure h2 transport: %s", err)
+	}
+	c := &http.Client{
+		Transport: tr,
+	}
+
+	res, err := c.Do(req)
+	//res, err := http.Get(u.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "isulog GET /logs failed")
 	}

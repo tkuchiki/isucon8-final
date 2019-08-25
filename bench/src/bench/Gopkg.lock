@@ -68,10 +68,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:357e8a9010dc590929a02bc5602c058acea216e4c46089755e618a5a59789604"
+  digest = "1:6f53ad58734ca3e4f80f870cbc4e2be3af4d3465ab861cc6f057cc70e6ec784f"
   name = "golang.org/x/net"
   packages = [
     "context",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
     "idna",
     "publicsuffix",
   ]
@@ -152,6 +155,7 @@
     "github.com/marcw/cachecontrol",
     "github.com/pkg/errors",
     "golang.org/x/crypto/bcrypt",
+    "golang.org/x/net/http2",
     "golang.org/x/net/publicsuffix",
     "golang.org/x/sync/errgroup",
   ]

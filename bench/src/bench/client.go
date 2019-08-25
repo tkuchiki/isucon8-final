@@ -3,6 +3,7 @@ package bench
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +21,7 @@ import (
 	"bench/urlcache"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/http2"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -154,7 +156,14 @@ func NewClient(base, bankid, name, password string, timeout, retire time.Duratio
 	if err != nil {
 		return nil, errors.Wrapf(err, "cookiejar.New Failed.")
 	}
-	transport := &http.Transport{}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	if err := http2.ConfigureTransport(transport); err != nil {
+		log.Fatalf("Failed to configure h2 transport: %s", err)
+	}
 	hc := &http.Client{
 		Jar:       jar,
 		Transport: transport,

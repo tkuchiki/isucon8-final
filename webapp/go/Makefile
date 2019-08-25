@@ -12,6 +12,11 @@ init:
 deps:
 	cd ${DIR}/src/isucon8/isucoin; GOPATH=${DIR} ${DIR}/bin/dep ensure
 
+deps2:
+	cd ${DIR}/src/isucon8/isubank; GOPATH=${DIR} ${DIR}/bin/dep ensure
+	cd ${DIR}/src/isucon8/isulogger; GOPATH=${DIR} ${DIR}/bin/dep init
+	cd ${DIR}/src/isucon8/isulogger; GOPATH=${DIR} ${DIR}/bin/dep ensure
+
 .PHONY: build
 build:
 	GOPATH=${DIR} go build -v -o isucoin isucon8/isucoin/webapp

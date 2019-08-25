@@ -2,13 +2,17 @@ package isubank
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/http2"
 )
 
 type isubankResponse interface {
@@ -75,7 +79,27 @@ func (b *Isubank) GetCredit(bankid string) (int64, error) {
 	*u = *b.endpoint
 	u.Path = path.Join(u.Path, "/credit")
 	u.RawQuery = url.Values{"bank_id": []string{bankid}}.Encode()
-	res, err := http.Get(u.String())
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return 0, fmt.Errorf("isubank new request failed. err: %s", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	if err := http2.ConfigureTransport(tr); err != nil {
+		log.Fatalf("Failed to configure h2 transport: %s", err)
+	}
+	c := &http.Client{
+		Transport: tr,
+	}
+
+	res, err := c.Do(req)
+	//res, err := http.Get(u.String())
 	if err != nil {
 		return 0, errors.Wrap(err, "isubank get_credit failed")
 	}
@@ -106,7 +130,27 @@ func (b *Isubank) request(p string, v map[string]interface{}, r isubankResponse)
 	if err := json.NewEncoder(body).Encode(v); err != nil {
 		return errors.Wrap(err, "isubank json encode failed")
 	}
-	res, err := http.Post(u.String(), "application/json", body)
+
+	req, err := http.NewRequest(http.MethodPost, u.String(), body)
+	if err != nil {
+		return fmt.Errorf("isubank new request failed. err: %s", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	if err := http2.ConfigureTransport(tr); err != nil {
+		log.Fatalf("Failed to configure h2 transport: %s", err)
+	}
+	c := &http.Client{
+		Transport: tr,
+	}
+
+	res, err := c.Do(req)
+	//res, err := http.Post(u.String(), "application/json", body)
 	if err != nil {
 		return errors.Wrap(err, "isubank request failed")
 	}

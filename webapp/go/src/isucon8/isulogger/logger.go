@@ -3,13 +3,17 @@ package isulogger
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
+
+	"golang.org/x/net/http2"
 )
 
 // Log はIsuloggerに送るためのログフォーマット
@@ -67,8 +71,19 @@ func (b *Isulogger) request(p string, v interface{}) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+b.appID)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	if err := http2.ConfigureTransport(tr); err != nil {
+		log.Fatalf("Failed to configure h2 transport: %s", err)
+	}
+	c := &http.Client{
+		Transport: tr,
+	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return fmt.Errorf("logger request failed. err: %s", err)
 	}

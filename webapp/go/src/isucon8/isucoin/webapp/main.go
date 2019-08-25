@@ -68,7 +68,8 @@ func main() {
 	router.POST("/orders", h.AddOrders)
 	router.GET("/orders", h.GetOrders)
 	router.DELETE("/order/:id", h.DeleteOrders)
-	router.NotFound = http.FileServer(http.Dir(public)).ServeHTTP
+	router.NotFound = http.FileServer(http.Dir(public))
+	//router.NotFound = http.FileServer(http.Dir(public)).ServeHTTP
 
 	addr := ":" + port
 	log.Printf("[INFO] start server %s", addr)

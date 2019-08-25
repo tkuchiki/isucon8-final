@@ -3,12 +3,16 @@ package isubank
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
+
+	"golang.org/x/net/http2"
 )
 
 var (
@@ -154,8 +158,19 @@ func (b *Isubank) request(p string, v interface{}, r isubankResponse) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+b.appID)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	if err := http2.ConfigureTransport(tr); err != nil {
+		log.Fatalf("Failed to configure h2 transport: %s", err)
+	}
+	c := &http.Client{
+		Transport: tr,
+	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return fmt.Errorf("isubank request failed. err: %s", err)
 	}
